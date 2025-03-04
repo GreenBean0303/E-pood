@@ -1,0 +1,22 @@
+[
+    {
+        "id": 1,
+        "name":"Sülearvuti",
+        "price":999.9,
+        "category":"Elektroonika"
+    },
+    
+    {
+        "id": 2,
+        "name":"Telefon",
+        "price":299.9,
+        "category":"Elektroonika"
+    },
+    
+    {
+        "id": 3,
+        "name":"Tahvelarvuti",
+        "price":599.9,
+        "category":"Elektroonika"
+    }
+]
