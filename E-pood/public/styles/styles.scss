@@ -1,0 +1,18 @@
+@import "./variables";
+.header {
+ background: black;
+ text-align: center;
+}
+body{
+    background: $backround;
+}
+#h1 {
+    color: $textColor;
+}
+#categories {
+    background: $categoryBack
+}
+
+.category-button {
+    background: $primaryBtn;
+}
