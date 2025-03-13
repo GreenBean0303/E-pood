@@ -1,138 +1,110 @@
-import express from 'express';
-import fs from 'fs/promises';
-import axios from 'axios';
-import path from 'path';
+import express from "express";
+import fs from "fs";
+import cors from "cors";
+import session from "express-session";
+import path from "path";
 
 const app = express();
 const PORT = 3000;
 
-// Middleware to serve static files (for frontend)
-app.use(express.static('public'));
+// Middleware
+app.use(cors());
+app.use(express.json());
+app.use(
+  session({
+    secret: "e-pood-secret",
+    resave: false,
+    saveUninitialized: true,
+  })
+);
 
-// Ensure the data directory exists
-const ensureDataDirectoryExists = async () => {
-    const dirPath = path.resolve('./data');
+app.use(express.static("public"));
+
+// Load products
+const products = JSON.parse(fs.readFileSync("./data/products.json", "utf8"));
+
+app.use((req, res, next) => {
+    res.setHeader("Content-Security-Policy", "default-src 'self'; img-src 'self' data: https://fakestoreapi.com http://localhost:3000");
+    next();
+});
+
+
+app.get("/", (req, res) => {
+    res.sendFile(path.resolve("public/epood.html"));
+});
+
+
+app.get("/api/products", (req, res) => {
+  res.json(products);
+});
+
+
+app.get("/api/products/:id", (req, res) => {
+  const product = products.find((p) => p.id === parseInt(req.params.id));
+  product ? res.json(product) : res.status(404).json({ error: "Product not found" });
+});
+
+
+app.get("/api/categories", (req, res) => {
+  const categories = [...new Set(products.map((p) => p.category))];
+  res.json(categories);
+});
+
+
+app.get("/api/products/category/:category", (req, res) => {
+  const filteredProducts = products.filter((p) => p.category === req.params.category);
+  res.json(filteredProducts);
+});
+
+
+const favouritesFile = "./data/favourites.json";
+
+app.get("/api/favourites", (req, res) => {
     try {
-        await fs.mkdir(dirPath, { recursive: true });
+       
+        const favourites = fs.existsSync(favouritesFile)
+            ? JSON.parse(fs.readFileSync(favouritesFile, "utf8") || "[]")
+            : [];
+        res.json(favourites);
     } catch (error) {
-        console.error('Error ensuring data directory exists:', error);
-    }
-};
-await ensureDataDirectoryExists();
-
-// Function: Fetch products from FakeStore API and save them to a file
-const fetchAndSaveProducts = async () => {
-    const response = await axios.get('https://fakestoreapi.com/products');
-    const products = response.data;
-    await fs.writeFile('./data/products.json', JSON.stringify(products, null, 2));
-};
-
-// Function: Check if a file is empty or doesn't exist
-const isFileEmpty = async (filePath) => {
-    try {
-        const rawData = await fs.readFile(filePath, 'utf-8');
-        return !rawData.trim(); // True if file is empty or contains only whitespace
-    } catch (error) {
-        console.error('Error reading file:', error);
-        return true; // Treat as empty if an error occurs
-    }
-};
-
-// Route: Get all products
-app.get('/products', async (req, res) => {
-    try {
-        const filePath = './data/products.json';
-
-        // Check if file is empty and fetch products if needed
-        const emptyFile = await isFileEmpty(filePath);
-        if (emptyFile) {
-            console.log('File is empty. Fetching data from FakeStore API...');
-            await fetchAndSaveProducts();
-        }
-
-        // Read and parse products
-        const rawData = await fs.readFile(filePath, 'utf-8');
-        const products = JSON.parse(rawData);
-
-        // Send products as response
-        res.status(200).json(products);
-    } catch (error) {
-        console.error('Error fetching products:', error);
-        res.status(500).json({ error: 'Failed to fetch products' });
+        console.error("Error reading favourites.json:", error);
+        res.status(500).json({ error: "Failed to load favourites" });
     }
 });
 
-// Route: Get unique product categories
-app.get('/products/categories', async (req, res) => {
-    try {
-        const filePath = './data/products.json';
 
-        // Check if file is empty and fetch products if needed
-        const emptyFile = await isFileEmpty(filePath);
-        if (emptyFile) {
-            console.log('File is empty. Fetching data from FakeStore API...');
-            await fetchAndSaveProducts();
-        }
-
-        // Read and parse products
-        const rawData = await fs.readFile(filePath, 'utf-8');
-        const products = JSON.parse(rawData);
-
-        // Extract unique categories
-        const categories = [...new Set(products.map(product => product.category))];
-
-        res.status(200).json(categories);
-    } catch (error) {
-        console.error('Error fetching categories:', error);
-        res.status(500).json({ error: 'Failed to fetch categories' });
-    }
+app.post("/api/favourites", (req, res) => {
+  const favourites = JSON.parse(fs.readFileSync(favouritesFile, "utf8") || "[]");
+  if (!favourites.some((fav) => fav.id === req.body.id)) {
+    favourites.push(req.body);
+    fs.writeFileSync(favouritesFile, JSON.stringify(favourites, null, 2));
+  }
+  res.json(favourites);
 });
 
-// Route: Get products by category
-app.get('/products/category/:category', async (req, res) => {
-    try {
-        const { category } = req.params; // Get the category from the request
-        const filePath = './data/products.json';
-
-        // Check if file is empty and fetch products if needed
-        const emptyFile = await isFileEmpty(filePath);
-        if (emptyFile) {
-            console.log('File is empty. Fetching data from FakeStore API...');
-            await fetchAndSaveProducts();
-        }
-
-        // Read and parse products
-        const rawData = await fs.readFile(filePath, 'utf-8');
-        const products = JSON.parse(rawData);
-
-        // Filter products by category
-        const filteredProducts = products.filter(
-            (product) => product.category.toLowerCase() === category.toLowerCase()
-        );
-
-        if (filteredProducts.length > 0) {
-            res.status(200).json(filteredProducts);
-        } else {
-            res.status(404).json({ message: `No products found for category: ${category}` });
-        }
-    } catch (error) {
-        console.error('Error filtering products by category:', error);
-        res.status(500).json({ error: 'Failed to filter products by category' });
-    }
+//Remove Favorite
+app.delete("/api/favourites/:id", (req, res) => {
+  let favourites = JSON.parse(fs.readFileSync(favouritesFile, "utf8") || "[]");
+  favourites = favourites.filter((fav) => fav.id !== parseInt(req.params.id));
+  fs.writeFileSync(favouritesFile, JSON.stringify(favourites, null, 2));
+  res.json(favourites);
 });
 
-// Route: Force fetch products and save to file
-app.get('/fetch-products', async (req, res) => {
-    try {
-        await fetchAndSaveProducts();
-        res.status(200).json({ message: 'Products fetched and saved successfully' });
-    } catch (error) {
-        console.error('Error fetching and saving products:', error);
-        res.status(500).json({ error: 'Failed to fetch and save products' });
-    }
+app.get("/api/cart", (req, res) => {
+  req.session.cart = req.session.cart || [];
+  res.json(req.session.cart);
 });
 
-// Start the server
-app.listen(PORT, () => {
-    console.log(`Server running at http://localhost:${PORT}`);
+app.post("/api/cart", (req, res) => {
+  req.session.cart = req.session.cart || [];
+  req.session.cart.push(req.body);
+  res.json(req.session.cart);
 });
+
+app.delete("/api/cart/:id", (req, res) => {
+  req.session.cart = req.session.cart.filter((item) => item.id !== parseInt(req.params.id));
+  res.json(req.session.cart);
+});
+
+
+app.listen(PORT, () => console.log(`Server running on http://localhost:${PORT}`));

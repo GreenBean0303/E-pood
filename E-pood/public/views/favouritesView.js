@@ -1,13 +1,16 @@
-export const displayFavouritesView = (favourites, cart) => {
-    const container = document.getElementById("app");
+import { getFavourites, addToCart, removeFromFavourites } from "../api.js";
+import { updateCartCount } from "./mainMenu.js"; 
 
-    if (!container) {
-        console.error("Container with ID 'app' not found.");
-        return;
-    }
-    container.innerHTML = "";
-    if (favourites.length === 0) {
-        container.innerHTML = "<p>You have no favourite products yet.</p>";
+export async function displayFavouritesView() {
+    const container = document.getElementById("app");
+    container.innerHTML = "<h2>Lemmikud</h2>";
+
+  
+    const favourites = await getFavourites();
+    console.log("Favourites:", favourites);
+
+    if (!favourites || favourites.length === 0) {
+        container.innerHTML += "<p>You have no favourite products yet.</p>";
         return;
     }
 
@@ -15,23 +18,25 @@ export const displayFavouritesView = (favourites, cart) => {
         const productCard = document.createElement("div");
         productCard.classList.add("product");
         productCard.innerHTML = `
-            <h3>${product.name}</h3>
-            <p>Category: ${product.category}</p>
+            <h3>${product.title}</h3>
             <p>Price: €${product.price}</p>
-            <button class="add-to-cart">Add to Cart</button>
-            <button class="remove-from-favourites">Remove</button>
+            <button class="add-to-cart">Lisa ostukorvi</button>
+            <button class="remove-from-favourites">Eemalda</button>
         `;
 
-        productCard.querySelector(".add-to-cart").onclick = () => {
-            cart.addProduct(product);
-            console.log(`Added ${product.name} to cart.`);
-        };
+        // Add to Cart
+        productCard.querySelector(".add-to-cart").addEventListener("click", async () => {
+            await addToCart(product);
+            updateCartCount(); //
+            console.log(`Added ${product.title} to cart.`);
+        });
 
-        productCard.querySelector(".remove-from-favourites").onclick = () => {
-            customer.removeFromFavourites(product);
-            displayFavouritesView(customer.getFavourites(), cart);
-        };
+        //  Remove from Favourites
+        productCard.querySelector(".remove-from-favourites").addEventListener("click", async () => {
+            await removeFromFavourites(product.id);
+            displayFavouritesView(); 
+        });
 
         container.appendChild(productCard);
     });
-};
+}

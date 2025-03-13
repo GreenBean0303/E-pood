@@ -1,15 +1,23 @@
 import { updateCartCount } from "./mainMenu.js";
 import { cart } from "../constructor/Cart.js";
-import { getProductsByCategory } from "../api.js";
+import { getAllProducts, getProductsByCategory } from "../api.js";
+import { addToFavourites, getFavourites } from "../api.js";
 
-export const displayProductsView = async (category, customer) => {
-    const products = await getProductsByCategory(category);
+export const displayProductsView = async (category = null) => {
+    let products;
+
+    try {
+        products = category ? await getProductsByCategory(category) : await getAllProducts();
+    } catch (error) {
+        console.error("Error fetching products:", error);
+        return;
+    }
 
     const container = document.getElementById("app");
     container.innerHTML = "<h2>Tooted</h2>";
 
-    if (products.length === 0) {
-        container.innerHTML += "<p>No products found in this category.</p>";
+    if (!products || products.length === 0) {
+        container.innerHTML += "<p>No products found.</p>";
         return;
     }
 
@@ -17,30 +25,29 @@ export const displayProductsView = async (category, customer) => {
         const productCard = document.createElement("div");
         productCard.classList.add("product-card");
         productCard.innerHTML = `
-            <img src="${product.image}" alt="${product.name}" />
-            <h3>${product.name}</h3>
+            <img src="${product.image}" alt="${product.title}" />
+            <h3>${product.title}</h3>
             <p>Category: ${product.category}</p>
             <p>Price: €${product.price}</p>
             <button class="add-to-cart">Lisa ostukorvi</button>
             <button class="add-to-favourites">Lisa lemmikutesse</button>
         `;
 
-        // Add to cart functionality
-        productCard.querySelector(".add-to-cart").onclick = () => {
+        // Add to Cart
+        productCard.querySelector(".add-to-cart").addEventListener("click", () => {
             cart.addProduct(product);
             updateCartCount(cart);
-            console.log(`Added ${product.name} to cart.`);
-        };
+            console.log(`Added ${product.title} to cart.`);
+        });
 
-        // Add to favourites functionality
-        productCard.querySelector(".add-to-favourites").onclick = () => {
-            customer.addToFavourites(product);
-        };
+        productCard.querySelector(".add-to-favourites").addEventListener("click", async () => {
+            await addToFavourites(product);
+            console.log(`Added ${product.title} to favourites.`);
+        });
 
         container.appendChild(productCard);
     });
 
-    // Handle category menu (if needed)
     const categoriesMenu = document.getElementById("categories");
     if (categoriesMenu) {
         categoriesMenu.addEventListener("click", (event) => {
@@ -48,7 +55,7 @@ export const displayProductsView = async (category, customer) => {
             const selectedCategory = event.target.dataset.category;
 
             if (selectedCategory) {
-                displayProductsView(selectedCategory, favourites);
+                displayProductsView(selectedCategory);
             }
         });
     }

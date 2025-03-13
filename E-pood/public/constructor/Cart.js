@@ -1,43 +1,30 @@
 export class Cart {
-    constructor () {
-        this.items = [];
+    constructor() {
+        this.items = JSON.parse(localStorage.getItem("cart")) || [];
     }
-    addProduct(product, quantity = 1) {
-        const existingItem = this.items.find(item => item.product.id === product.id);
-        if (existingItem) {
-            existingItem.quantity += quantity;
-        } else {
-            this.items.push({ product, quantity });
+
+    addProduct(product) {
+        console.log(`Adding product to cart: ${product.title}`); 
+        const existingItem = this.items.find((item) => item.id === product.id);
+        if (!existingItem) {
+            this.items.push(product);
+            this.saveCart();
         }
-        
     }
-    updateProductQuantity(productId, delta) {
-        const item = this.items.find(item => item.product.id === productId);
-        if (item) {
-            item.quantity += delta;
-            if (item.quantity <= 0) {
-                this.removeProduct(productId);
-            }
-        }
-        
-    }
+
     removeProduct(productId) {
-        this.items = this.items.filter((item)=>item.product.id !==productId)
-     
-    }
-    get totalItems() {
-        return this.items.reduce((total, item)=> total + item.quantity,0);
-    }
-    calculateTotal(VAT = 0.2, discount = 0.1) {
-        return this.items.reduce((total, item) => {
-            const discountedPrice = item.product.price * (1 - discount);
-            return total + discountedPrice * item.quantity * (1 + VAT);
-        }, 0);
-    }
-    clear() {
-        this.items = [];
+        this.items = this.items.filter((item) => item.id !== productId);
+        this.saveCart();
     }
 
+    getItems() {
+        return this.items;
+    }
 
+    saveCart() {
+        localStorage.setItem("cart", JSON.stringify(this.items));
+    }
 }
+
+// ✅ Export an instance of `Cart`
 export const cart = new Cart();

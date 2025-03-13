@@ -1,4 +1,8 @@
-export function updateCartCount(cart) {
+import { cart } from "../constructor/Cart.js";
+
+export function updateCartCount() {
     const cartCount = document.getElementById("cart-count");
-    cartCount.textContent = cart.totalItems;
+    if (cartCount) {
+        cartCount.textContent = cart.getItems().length;
+    }
 }

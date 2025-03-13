@@ -1,81 +1,77 @@
-import { Product } from "./constructor/Product.js";
+const API_BASE_URL = "http://localhost:3000/api";
 
-const BASE_URL = "http://localhost:3000";
 
-export const getProductsFromJson = async () => {
-  try {
-    const response = await fetch(`${BASE_URL}/products`); // Fetch from backend products endpoint
-    if (!response.ok) throw new Error("Failed to fetch products from JSON");
-    const data = await response.json();
-    return data.map(
-      (item) =>
-        new Product(
-          item.id,
-          item.title,
-          item.price,
-          item.category,
-          item.description,
-          item.image
-        )
-    );
-  } catch (error) {
-    console.error("Error fetching products from JSON:", error);
-    return []; // Return an empty array if fetch fails
+export async function getAllProducts() {
+    const response = await fetch(`${API_BASE_URL}/products`);
+    return response.json();
+}
+
+
+export async function getProductById(productId) {
+    const response = await fetch(`${API_BASE_URL}/products/${productId}`);
+    return response.json();
+}
+
+
+export async function getAllCategories() {
+    const response = await fetch(`${API_BASE_URL}/categories`);
+    return response.json();
+}
+
+
+export async function getProductsByCategory(category) {
+    const response = await fetch(`${API_BASE_URL}/products/category/${category}`);
+    return response.json();
+}
+
+
+export async function getFavourites() {
+  const favourites = JSON.parse(localStorage.getItem("favourites")) || [];
+  console.log("Fetched favourites from localStorage:", favourites); 
+  return favourites;
+}
+
+export async function addToFavourites(product) {
+  console.log(`Adding to favourites: ${product.title}`); 
+
+  let favourites = JSON.parse(localStorage.getItem("favourites")) || [];
+  if (!favourites.some(fav => fav.id === product.id)) {
+      favourites.push(product);
+      localStorage.setItem("favourites", JSON.stringify(favourites));
   }
-};
 
-export const getProductsByCategory = async (category) => {
-  try {
-      // If no category is provided, fetch all products
-      const endpoint = category ? `/products/category/${category}` : "/products";
-      const response = await fetch(`${BASE_URL}${endpoint}`);
-      if (!response.ok) {
-          throw new Error("Failed to fetch products by category");
-      }
-      const data = await response.json();
+  return favourites;
+}
 
-      // Map the data to Product objects
-      return data.map((item) => new Product(
-          item.id,
-          item.title,
-          item.price,
-          item.category,
-          item.description,
-          item.image
-      ));
-  } catch (error) {
-      console.error(`Error fetching products for category "${category}":`, error);
-      return []; // Return an empty array if fetching fails
-  }
-};
+export async function removeFromFavourites(productId) {
+  console.log(`Removing from favourites: ${productId}`); 
 
-export const getAllCategory = async () => {
-  try {
-    const response = await fetch(`${BASE_URL}/products/categories`);
-    if (!response.ok) throw new Error("Failed to fetch categories");
-    return response.json(); // Return categories array
-  } catch (error) {
-    console.error("Error fetching categories:", error);
-    return []; // Return an empty array if fetch fails
-  }
-};
+  let favourites = JSON.parse(localStorage.getItem("favourites")) || [];
+  favourites = favourites.filter(fav => fav.id !== productId);
+  localStorage.setItem("favourites", JSON.stringify(favourites));
 
-export const getProductById = async (productId) => {
-  try {
-    const response = await fetch(`${BASE_URL}/products/${productId}`);
-    if (!response.ok)
-      throw new Error(`Failed to fetch product with ID ${productId}`);
-    const item = await response.json();
-    return new Product(
-      item.id,
-      item.title,
-      item.price,
-      item.category,
-      item.description,
-      item.image
-    );
-  } catch (error) {
-    console.error(`Error fetching product with ID "${productId}":`, error);
-    return null; // Return null if fetch fails
-  }
-};
+  return favourites;
+}
+
+
+
+export async function addToCart(product) {
+  console.log(`Adding to cart via API: ${product.title}`); 
+
+  let cart = JSON.parse(localStorage.getItem("cart")) || [];
+  cart.push(product);
+  localStorage.setItem("cart", JSON.stringify(cart));
+
+  return cart; 
+}
+
+export async function getCart() {
+  return JSON.parse(localStorage.getItem("cart")) || [];
+}
+
+
+
+export async function removeFromCart(productId) {
+    const response = await fetch(`${API_BASE_URL}/cart/${productId}`, { method: "DELETE" });
+    return response.json();
+}

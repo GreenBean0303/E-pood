@@ -1,9 +1,18 @@
 body {
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh; /* Ensures the page is at least as tall as the viewport */
   margin: 0;
   font-family: Arial, sans-serif;
   background-color: #000;
   color: #fff;
 }
+
+#app {
+  flex-grow: 1; 
+  padding-bottom: 60px; 
+}
+
 
 /* Header styling */
 .header {
@@ -25,6 +34,24 @@ body {
   cursor: pointer;
 }
 
+button {
+  background-color: #ff69b4; 
+  color: white;
+  border: none;
+  padding: 12px 18px;
+  font-size: 1rem;
+  border-radius: 8px; 
+  cursor: pointer;
+  transition: background-color 0.3s ease, transform 0.2s ease;
+  margin: 10px;
+  display: inline-block; 
+}
+
+button:hover {
+  background-color: #ff1493; 
+  transform: scale(1.05);
+}
+
 /* Categories section */
 #categories {
   background-color: #000;
@@ -34,13 +61,14 @@ body {
   padding: 15px;
   border-bottom: 2px solid #ff69b4;
 }
+
 .category-button {
   background-color: #fafafa;
-  color: rgb(0, 0, 0); /* White text */
+  color: rgb(0, 0, 0);
   padding: 10px 20px;
   border: none;
   border-radius: 5px;
-  margin: 5px; /* Add spacing between buttons */
+  margin: 5px;
   cursor: pointer;
   transition: background-color 0.3s ease;
 }
@@ -98,44 +126,18 @@ body {
   margin-bottom: 10px;
 }
 
-.product-card h3 {
-  font-size: 1.2rem;
-  margin: 10px 0;
-  color: #333;
-}
-
-.product-card p {
-  font-size: 0.9rem;
-  color: #555;
-  margin-bottom: 10px;
-}
-
-.product-card button {
-  background-color: #ff69b4;
-  color: white;
-  padding: 10px 15px;
-  border: none;
-  border-radius: 5px;
-  cursor: pointer;
-  font-size: 0.9rem;
-  transition: background-color 0.3s ease;
-}
-
-.product-card button:hover {
-  background-color: #ff1493;
-}
-
 /* Footer styling */
 .footer {
   background-color: #000;
   color: #ff69b4;
   text-align: center;
   padding: 10px 0;
-  position: fixed;
+  position: relative;
   bottom: 0;
   width: 100%;
 }
 
 .footer p {
+
   margin: 0;
 }
